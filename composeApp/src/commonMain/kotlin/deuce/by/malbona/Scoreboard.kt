@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -21,19 +23,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
+import deuce.composeapp.generated.resources.Res
+import deuce.composeapp.generated.resources.flip_initial_serve
+import deuce.composeapp.generated.resources.recall_last_score
+import deuce.composeapp.generated.resources.reset_current_game
+import deuce.composeapp.generated.resources.team_a_name_placeholder
+import deuce.composeapp.generated.resources.team_b_name_placeholder
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun Scoreboard(viewModel: ScoreboardViewModel) {
     val definedColors = DefinedColor.entries
     val definedColorsNumber = definedColors.size
-    var teamAName by remember { mutableStateOf("Player 1") }
-    var teamBName by remember { mutableStateOf("Player 2") }
+    val initialTeamAName = stringResource(Res.string.team_a_name_placeholder)
+    val initialTeamBName = stringResource(Res.string.team_b_name_placeholder)
+    var teamAName by remember { mutableStateOf(initialTeamAName) }
+    var teamBName by remember { mutableStateOf(initialTeamBName) }
     var teamAColor by remember { mutableStateOf(DefinedColor.`Blue🇺🇦`) }
     var teamBColor by remember { mutableStateOf(DefinedColor.`Yellow🇺🇦`) }
     val uiState by viewModel.uiState.collectAsState()
     val (teamAGames, teamBGames, teamAScore, teamBScore, teamAServes, teamBServes) = uiState
+    val focusManager = LocalFocusManager.current
+
     Box(contentAlignment = Alignment.Center) {
         Column {
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -41,6 +56,12 @@ fun Scoreboard(viewModel: ScoreboardViewModel) {
                     value = teamAName,
                     onValueChange = { teamAName = it },
                     textStyle = TextStyle(color = teamAColor.color, fontSize = 24.sp),
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = if (
+                            teamBName == stringResource(Res.string.team_b_name_placeholder)
+                        ) ImeAction.Next else ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     singleLine = true
                 )
                 Text("🏓".repeat(teamAServes))
@@ -50,6 +71,8 @@ fun Scoreboard(viewModel: ScoreboardViewModel) {
                     value = teamBName,
                     onValueChange = { teamBName = it },
                     textStyle = TextStyle(color = teamBColor.color, fontSize = 24.sp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     singleLine = true
                 )
             }
@@ -64,8 +87,7 @@ fun Scoreboard(viewModel: ScoreboardViewModel) {
                         onLongClick = {
                             teamAColor =
                                 definedColors[(teamAColor.ordinal + 1) % definedColorsNumber]
-                        }
-                    ) {
+                        }) {
                         viewModel.updateStates(scoredTeam = Team.A)
                     }.background(color = teamAColor.color).weight(1f).fillMaxHeight()
                 ) {
@@ -95,28 +117,22 @@ fun Scoreboard(viewModel: ScoreboardViewModel) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Button(
-                {
-                    viewModel.resetCurrentGame()
-                }
+                { viewModel.resetCurrentGame() }
             ) {
-                Text("Reset current game")
+                Text(stringResource(Res.string.reset_current_game))
             }
             if (viewModel.isNotStarted()) {
                 Button(
-                    {
-                        viewModel.flipInitialServe()
-                    }
+                    { viewModel.flipInitialServe() }
                 ) {
-                    Text("Flip initial serve")
+                    Text(stringResource(Res.string.flip_initial_serve))
                 }
             }
             Button(
-                {
-                    viewModel.recallLastScore()
-                },
+                { viewModel.recallLastScore() },
                 enabled = viewModel.lastScoreUiState != null
             ) {
-                Text("Recall last score")
+                Text(stringResource(Res.string.recall_last_score))
             }
         }
     }
