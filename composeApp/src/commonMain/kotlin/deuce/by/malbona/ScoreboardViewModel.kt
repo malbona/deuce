@@ -33,7 +33,7 @@ class ScoreboardViewModel : ViewModel() {
             Team.A -> Team.B
             Team.B -> Team.A
         }
-        gameInitialServe = when (matchInitialServe) {
+        gameInitialServe = when (gameInitialServe) {
             Team.A -> Team.B
             Team.B -> Team.A
         }
