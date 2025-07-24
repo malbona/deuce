@@ -1,7 +1,6 @@
 <resources>
-    <string name="team_a_name_placeholder">Player 1</string>
-    <string name="team_b_name_placeholder">Player 2</string>
     <string name="reset_current_game">Reset current game</string>
     <string name="flip_initial_serve">Flip initial serve</string>
     <string name="recall_last_score">Recall last score</string>
+    <string name="flip_sides">Flip sides</string>
 </resources>

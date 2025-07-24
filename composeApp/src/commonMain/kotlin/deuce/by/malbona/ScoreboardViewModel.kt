@@ -7,20 +7,16 @@ import kotlinx.coroutines.flow.update
 
 class ScoreboardViewModel : ViewModel() {
 
+    private val definedColors = DefinedColor.entries
+    private val definedColorsNumber = definedColors.size
+
     private var matchInitialServe = Team.A
     private var gameInitialServe = Team.A
     var lastScoreUiState: UiState? = null
         private set
 
     private val _uiState = MutableStateFlow(
-        UiState(
-            teamAGames = "",
-            teamBGames = "",
-            teamAScore = 0,
-            teamBScore = 0,
-            teamAServes = 2,
-            teamBServes = 0
-        )
+        UiState()
     )
 
     val uiState = _uiState.asStateFlow()
@@ -32,11 +28,49 @@ class ScoreboardViewModel : ViewModel() {
         }
     }
 
-    fun updateStates(scoredTeam: Team) {
-        lastScoreUiState = uiState.value
-        var (teamAGames, teamBGames, teamAScore, teamBScore, teamAServes, teamBServes) = uiState.value
+    fun flipSides() {
+        matchInitialServe = when (matchInitialServe) {
+            Team.A -> Team.B
+            Team.B -> Team.A
+        }
+        gameInitialServe = when (matchInitialServe) {
+            Team.A -> Team.B
+            Team.B -> Team.A
+        }
+        _uiState.update {
+            UiState(
+                teamA = it.teamB,
+                teamB = it.teamA
+            )
+        }
+    }
 
-        when (scoredTeam) {
+    fun updateColor(team: Team) {
+        when (team) {
+            Team.A -> _uiState.update { it.copy(teamA = it.teamA.copy(color = nextDefinedColor(it.teamA.color.ordinal))) }
+            Team.B -> _uiState.update { it.copy(teamB = it.teamB.copy(color = nextDefinedColor(it.teamB.color.ordinal))) }
+        }
+    }
+
+    private fun nextDefinedColor(currentOrdinal: Int): DefinedColor {
+        return definedColors[(currentOrdinal + 1) % definedColorsNumber]
+    }
+
+    fun rename(team: Team, newName: String) {
+        when (team) {
+            Team.A -> _uiState.update { it.copy(teamA = it.teamA.copy(name = newName)) }
+            Team.B -> _uiState.update { it.copy(teamB = it.teamB.copy(name = newName)) }
+        }
+    }
+
+    fun score(team: Team) {
+        lastScoreUiState = uiState.value
+        val (teamA, teamB) = uiState.value
+        var (_, _, teamAGames, teamAScore, teamAServes) = teamA
+        var (_, _, teamBGames, teamBScore, teamBServes) = teamB
+        var shouldFlipSides = false
+
+        when (team) {
             Team.A -> teamAScore++
             Team.B -> teamBScore++
         }
@@ -85,6 +119,7 @@ class ScoreboardViewModel : ViewModel() {
                         teamBServes = 0
                     }
                 }
+                shouldFlipSides = true
             }
 
             teamBScore >= 11 && teamBScore - teamAScore >= 2 -> {
@@ -105,41 +140,54 @@ class ScoreboardViewModel : ViewModel() {
                         teamBServes = 0
                     }
                 }
+                shouldFlipSides = true
             }
         }
 
         _uiState.update {
             it.copy(
-                teamAGames = teamAGames,
-                teamBGames = teamBGames,
-                teamAScore = teamAScore,
-                teamBScore = teamBScore,
-                teamAServes = teamAServes,
-                teamBServes = teamBServes
+                teamA = it.teamA.copy(
+                    games = teamAGames,
+                    score = teamAScore,
+                    serves = teamAServes
+                ),
+                teamB = it.teamB.copy(
+                    games = teamBGames,
+                    score = teamBScore,
+                    serves = teamBServes
+                )
             )
+        }
+
+        if (shouldFlipSides) {
+            flipSides()
         }
     }
 
     fun resetCurrentGame() {
         _uiState.update {
             it.copy(
-                teamAScore = 0,
-                teamBScore = 0,
-                teamAServes = when (gameInitialServe) {
-                    Team.A -> 2
-                    Team.B -> 0
-                },
-                teamBServes = when (gameInitialServe) {
-                    Team.A -> 0
-                    Team.B -> 2
-                }
+                teamA = it.teamA.copy(
+                    score = 0,
+                    serves = when (gameInitialServe) {
+                        Team.A -> 2
+                        Team.B -> 0
+                    }
+                ),
+                teamB = it.teamB.copy(
+                    score = 0,
+                    serves = when (gameInitialServe) {
+                        Team.A -> 0
+                        Team.B -> 2
+                    }
+                )
             )
         }
     }
 
     fun isNotStarted(): Boolean {
-        val (teamAGames, teamBGames, teamAScore, teamBScore) = uiState.value
-        return teamAGames.isEmpty() && teamBGames.isEmpty() && teamAScore == 0 && teamBScore == 0
+        val (teamA, teamB) = uiState.value
+        return teamA.games.isEmpty() && teamB.games.isEmpty() && teamA.score == 0 && teamB.score == 0
     }
 
     fun flipInitialServe() {
@@ -150,14 +198,18 @@ class ScoreboardViewModel : ViewModel() {
         gameInitialServe = matchInitialServe
         _uiState.update {
             it.copy(
-                teamAServes = when (gameInitialServe) {
-                    Team.A -> 2
-                    Team.B -> 0
-                },
-                teamBServes = when (gameInitialServe) {
-                    Team.A -> 0
-                    Team.B -> 2
-                }
+                teamA = it.teamA.copy(
+                    serves = when (gameInitialServe) {
+                        Team.A -> 2
+                        Team.B -> 0
+                    }
+                ),
+                teamB = it.teamB.copy(
+                    serves = when (gameInitialServe) {
+                        Team.A -> 0
+                        Team.B -> 2
+                    }
+                )
             )
         }
     }
