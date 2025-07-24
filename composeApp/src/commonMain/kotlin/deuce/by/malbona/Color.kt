@@ -1,4 +1,4 @@
-@file:Suppress("NonAsciiCharacters", "NonAsciiCharacters")
+@file:Suppress("NonAsciiCharacters")
 
 package deuce.by.malbona
 
